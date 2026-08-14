@@ -1,28 +1,42 @@
-import os
 import sqlite3
 from datetime import date, timedelta
 
 import pandas as pd
 import streamlit as st
-from dotenv import load_dotenv
 
-load_dotenv()
 
-DB_PATH = "life_of_booster.db"
+# ============================================================
+# Life of Booster
+# STEP 1 + STEP 2 + STEP 3
+# ============================================================
 
 st.set_page_config(
     page_title="Life of Booster",
     page_icon="🚀",
-    layout="wide",
+    layout="wide"
 )
 
-# ---------- Database ----------
-def get_conn():
-    return sqlite3.connect(DB_PATH, check_same_thread=False)
 
-def init_db():
-    conn = get_conn()
-    conn.execute("""
+# ============================================================
+# DATABASE
+# ============================================================
+
+DB_PATH = "life_of_booster.db"
+
+
+def get_connection():
+    return sqlite3.connect(
+        DB_PATH,
+        check_same_thread=False
+    )
+
+
+def initialize_database():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS daily_log (
             log_date TEXT PRIMARY KEY,
             steps INTEGER NOT NULL,
@@ -33,162 +47,692 @@ def init_db():
             note TEXT
         )
     """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_progress (
+            id INTEGER PRIMARY KEY,
+            total_xp INTEGER DEFAULT 0,
+            total_points INTEGER DEFAULT 0
+        )
+    """)
+
+    cursor.execute("""
+        INSERT OR IGNORE INTO user_progress
+        (id, total_xp, total_points)
+        VALUES (1, 0, 0)
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS mission_completion (
+            mission_date TEXT PRIMARY KEY,
+            mission_title TEXT NOT NULL,
+            xp_earned INTEGER NOT NULL,
+            points_earned INTEGER NOT NULL
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS badges (
+            badge_id TEXT PRIMARY KEY,
+            badge_name TEXT NOT NULL,
+            badge_description TEXT NOT NULL,
+            earned_date TEXT NOT NULL
+        )
+    """)
+
     conn.commit()
     conn.close()
 
-def save_log(log_date, steps, sleep_hours, water_ml, exercise_min, mood, note):
-    conn = get_conn()
+
+initialize_database()
+
+
+# ============================================================
+# STYLE
+# ============================================================
+
+st.markdown("""
+<style>
+
+.main-title {
+    font-size: 42px;
+    font-weight: 800;
+}
+
+.small-text {
+    color: #777777;
+}
+
+div[data-testid="stMetric"] {
+    background-color: white;
+    border: 1px solid #eeeeee;
+    padding: 15px;
+    border-radius: 15px;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+# ============================================================
+# DAILY LOG
+# ============================================================
+
+def save_daily_log(
+    log_date,
+    steps,
+    sleep_hours,
+    water_ml,
+    exercise_min,
+    mood,
+    note
+):
+
+    conn = get_connection()
+
     conn.execute("""
         INSERT INTO daily_log
-        (log_date, steps, sleep_hours, water_ml, exercise_min, mood, note)
+        (
+            log_date,
+            steps,
+            sleep_hours,
+            water_ml,
+            exercise_min,
+            mood,
+            note
+        )
         VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(log_date) DO UPDATE SET
-            steps=excluded.steps,
-            sleep_hours=excluded.sleep_hours,
-            water_ml=excluded.water_ml,
-            exercise_min=excluded.exercise_min,
-            mood=excluded.mood,
-            note=excluded.note
-    """, (str(log_date), steps, sleep_hours, water_ml, exercise_min, mood, note))
+
+        ON CONFLICT(log_date)
+        DO UPDATE SET
+            steps = excluded.steps,
+            sleep_hours = excluded.sleep_hours,
+            water_ml = excluded.water_ml,
+            exercise_min = excluded.exercise_min,
+            mood = excluded.mood,
+            note = excluded.note
+    """, (
+        str(log_date),
+        steps,
+        sleep_hours,
+        water_ml,
+        exercise_min,
+        mood,
+        note
+    ))
+
     conn.commit()
     conn.close()
 
-def load_logs():
-    conn = get_conn()
-    df = pd.read_sql_query(
-        "SELECT * FROM daily_log ORDER BY log_date DESC", conn
-    )
+
+def get_today_log():
+
+    conn = get_connection()
+
+    row = conn.execute("""
+        SELECT
+            steps,
+            sleep_hours,
+            water_ml,
+            exercise_min,
+            mood,
+            note
+        FROM daily_log
+        WHERE log_date = ?
+    """, (
+        str(date.today()),
+    )).fetchone()
+
     conn.close()
+
+    return row
+
+
+def get_all_logs():
+
+    conn = get_connection()
+
+    df = pd.read_sql_query("""
+        SELECT *
+        FROM daily_log
+        ORDER BY log_date DESC
+    """, conn)
+
+    conn.close()
+
     return df
 
-# ---------- Scoring ----------
-def clamp(value, low=0, high=100):
-    return max(low, min(high, value))
 
-def calculate_score(steps, sleep_hours, water_ml, exercise_min, mood):
-    step_score = clamp(steps / 8000 * 100)
-    sleep_score = clamp(100 - abs(sleep_hours - 8) * 25)
-    water_score = clamp(water_ml / 1500 * 100)
-    exercise_score = clamp(exercise_min / 30 * 100)
-    mood_score = clamp(mood / 5 * 100)
+# ============================================================
+# SCORE
+# ============================================================
+
+def clamp(value):
+
+    return max(
+        0,
+        min(100, value)
+    )
+
+
+def calculate_score(
+    steps,
+    sleep_hours,
+    water_ml,
+    exercise_min,
+    mood
+):
+
+    steps_score = clamp(
+        steps / 8000 * 100
+    )
+
+    sleep_score = clamp(
+        100 - abs(sleep_hours - 8) * 25
+    )
+
+    water_score = clamp(
+        water_ml / 1500 * 100
+    )
+
+    exercise_score = clamp(
+        exercise_min / 30 * 100
+    )
+
+    mood_score = clamp(
+        mood / 5 * 100
+    )
 
     score = (
-        step_score * 0.25
+        steps_score * 0.25
         + sleep_score * 0.20
         + water_score * 0.15
         + exercise_score * 0.25
         + mood_score * 0.15
     )
-    return round(score)
 
-def get_mission(steps, sleep_hours, water_ml, exercise_min, mood):
-    items = [
-        ("steps", 8000 - steps, "🚶 10분 걷기 미션", "가볍게 10분 정도 걸어보세요."),
-        ("sleep", 8 - sleep_hours, "😴 수면 준비 미션", "오늘은 잠들기 30분 전부터 화면을 줄여보세요."),
-        ("water", 1500 - water_ml, "💧 물 마시기 미션", "물 한 컵을 마시고 잠시 쉬어보세요."),
-        ("exercise", 30 - exercise_min, "🏃 움직임 미션", "가볍게 스트레칭이나 산책을 해보세요."),
-        ("mood", 5 - mood, "🙂 기분 전환 미션", "좋아하는 음악을 듣거나 잠깐 쉬어보세요."),
-    ]
-    # 가장 부족한 항목을 우선 추천
-    positive = [x for x in items if x[1] > 0]
-    if not positive:
-        return "🎉 오늘 목표를 대부분 달성했어요!", "지금처럼 꾸준히 이어가 보세요."
-    chosen = max(positive, key=lambda x: x[1])
-    return chosen[2], chosen[3]
+    return round(score, 1)
 
-def calculate_points(score):
-    return score * 10
 
-def calculate_streak(df):
+# ============================================================
+# XP / POINTS
+# ============================================================
+
+def get_progress():
+
+    conn = get_connection()
+
+    row = conn.execute("""
+        SELECT total_xp, total_points
+        FROM user_progress
+        WHERE id = 1
+    """).fetchone()
+
+    conn.close()
+
+    return row[0], row[1]
+
+
+def add_rewards(xp, points):
+
+    conn = get_connection()
+
+    conn.execute("""
+        UPDATE user_progress
+        SET
+            total_xp = total_xp + ?,
+            total_points = total_points + ?
+        WHERE id = 1
+    """, (
+        xp,
+        points
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+# ============================================================
+# LEVEL
+# ============================================================
+
+def get_level(xp):
+
+    if xp < 100:
+        return 1, "🌱 새싹", 100
+
+    if xp < 250:
+        return 2, "🌿 성장 중", 250
+
+    if xp < 500:
+        return 3, "🌳 습관 형성", 500
+
+    if xp < 1000:
+        return 4, "🚀 Booster", 1000
+
+    return 5, "🏆 Life Master", 1000
+
+
+# ============================================================
+# MISSION
+# ============================================================
+
+def get_today_mission(
+    steps,
+    sleep_hours,
+    water_ml,
+    exercise_min,
+    mood
+):
+
+    if steps < 8000:
+
+        return (
+            "🚶 10분 걷기",
+            "가볍게 10분 정도 걸어보세요.",
+            50,
+            100
+        )
+
+    if water_ml < 1500:
+
+        return (
+            "💧 물 마시기",
+            "물 한 잔을 더 마셔보세요.",
+            30,
+            70
+        )
+
+    if sleep_hours < 7.5:
+
+        return (
+            "😴 수면 준비",
+            "오늘은 조금 일찍 휴식을 준비해보세요.",
+            20,
+            50
+        )
+
+    if exercise_min < 30:
+
+        return (
+            "🏃 10분 움직이기",
+            "가볍게 몸을 움직여보세요.",
+            50,
+            100
+        )
+
+    if mood <= 2:
+
+        return (
+            "🙂 기분 전환",
+            "좋아하는 활동으로 기분을 전환해보세요.",
+            30,
+            70
+        )
+
+    return (
+        "🎉 오늘의 목표 달성!",
+        "오늘 생활 습관 목표를 잘 달성했어요.",
+        20,
+        50
+    )
+
+
+def mission_completed_today():
+
+    conn = get_connection()
+
+    row = conn.execute("""
+        SELECT mission_date
+        FROM mission_completion
+        WHERE mission_date = ?
+    """, (
+        str(date.today()),
+    )).fetchone()
+
+    conn.close()
+
+    return row is not None
+
+
+def complete_mission(
+    title,
+    xp,
+    points
+):
+
+    conn = get_connection()
+
+    conn.execute("""
+        INSERT INTO mission_completion
+        (
+            mission_date,
+            mission_title,
+            xp_earned,
+            points_earned
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        str(date.today()),
+        title,
+        xp,
+        points
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+# ============================================================
+# BADGES
+# ============================================================
+
+def update_badges():
+
+    xp, points = get_progress()
+
+    conn = get_connection()
+
+    mission_count = conn.execute("""
+        SELECT COUNT(*)
+        FROM mission_completion
+    """).fetchone()[0]
+
+    log_count = conn.execute("""
+        SELECT COUNT(*)
+        FROM daily_log
+    """).fetchone()[0]
+
+    badges = []
+
+    if log_count >= 1:
+
+        badges.append((
+            "first_log",
+            "🌱 첫 기록",
+            "첫 번째 생활 기록을 남겼어요."
+        ))
+
+    if mission_count >= 1:
+
+        badges.append((
+            "first_mission",
+            "🎯 첫 미션",
+            "첫 번째 미션을 완료했어요."
+        ))
+
+    if mission_count >= 7:
+
+        badges.append((
+            "mission_7",
+            "🔥 미션 7회",
+            "미션을 7번 완료했어요."
+        ))
+
+    if xp >= 500:
+
+        badges.append((
+            "xp_500",
+            "⭐ XP 500",
+            "XP 500을 달성했어요."
+        ))
+
+    if xp >= 1000:
+
+        badges.append((
+            "xp_1000",
+            "🏆 XP 1000",
+            "XP 1000을 달성했어요."
+        ))
+
+    for badge in badges:
+
+        conn.execute("""
+            INSERT OR IGNORE INTO badges
+            (
+                badge_id,
+                badge_name,
+                badge_description,
+                earned_date
+            )
+            VALUES (?, ?, ?, ?)
+        """, (
+            badge[0],
+            badge[1],
+            badge[2],
+            str(date.today())
+        ))
+
+    conn.commit()
+    conn.close()
+
+
+def get_badges():
+
+    conn = get_connection()
+
+    df = pd.read_sql_query("""
+        SELECT *
+        FROM badges
+        ORDER BY earned_date DESC
+    """, conn)
+
+    conn.close()
+
+    return df
+
+
+# ============================================================
+# STREAK
+# ============================================================
+
+def get_streak():
+
+    df = get_all_logs()
+
     if df.empty:
         return 0
 
-    dates = set(pd.to_datetime(df["log_date"]).dt.date)
-    today = date.today()
+    dates = set(
+        pd.to_datetime(
+            df["log_date"]
+        ).dt.date
+    )
 
-    # 오늘 기록이 없으면 어제부터 계산
-    current = today if today in dates else today - timedelta(days=1)
+    current = date.today()
+
     streak = 0
+
     while current in dates:
+
         streak += 1
+
         current -= timedelta(days=1)
+
     return streak
 
-# ---------- Optional AI ----------
-def ai_recommendation(score, steps, sleep_hours, water_ml, exercise_min, mood):
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        mission_title, mission_text = get_mission(
-            steps, sleep_hours, water_ml, exercise_min, mood
-        )
-        return (
-            "현재는 OPENAI_API_KEY가 없어 규칙 기반 추천을 사용하고 있어요.\n\n"
-            f"**{mission_title}**\n\n{mission_text}"
-        )
 
-    try:
-        from openai import OpenAI
-        client = OpenAI(api_key=api_key)
+# ============================================================
+# WEEKLY REPORT
+# ============================================================
 
-        prompt = f"""
-너는 건강 습관을 돕는 앱 'Life of Booster'의 코치다.
-사용자의 기록을 바탕으로 부담 없는 생활 습관 미션 1~2개를 추천해라.
-의학적 진단이나 치료 조언은 하지 말고, 과도한 운동이나 식단 제한을 권하지 마라.
-한국어로 짧고 친절하게 답해라.
+def get_week_data():
 
-오늘 점수: {score}/100
-걸음 수: {steps}
-수면: {sleep_hours}시간
-물: {water_ml}mL
-운동: {exercise_min}분
-기분: {mood}/5
-"""
-        response = client.responses.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-5-mini"),
-            input=prompt,
-        )
-        return response.output_text
-    except Exception as e:
-        return (
-            "AI 추천을 불러오지 못해 기본 추천을 표시합니다.\n\n"
-            f"오류 유형: {type(e).__name__}\n\n"
-            "API 키와 인터넷 연결을 확인해 주세요."
-        )
+    df = get_all_logs()
 
-# ---------- App ----------
-init_db()
+    if df.empty:
+        return df
 
-st.title("🚀 Life of Booster")
-st.caption("개인 생활 데이터를 바탕으로 오늘의 작은 미션과 보상을 제공하는 습관 관리 MVP")
-
-with st.sidebar:
-    st.header("📌 메뉴")
-    page = st.radio(
-        "이동",
-        ["오늘의 Booster", "기록 보기", "프로젝트 설명"]
+    df["log_date"] = pd.to_datetime(
+        df["log_date"]
     )
-    st.divider()
+
+    today = pd.Timestamp.today().normalize()
+
+    monday = today - pd.Timedelta(
+        days=today.weekday()
+    )
+
+    sunday = monday + pd.Timedelta(
+        days=6
+    )
+
+    week = df[
+        (df["log_date"] >= monday)
+        &
+        (df["log_date"] <= sunday)
+    ].copy()
+
+    if week.empty:
+        return week
+
+    week["score"] = week.apply(
+        lambda row:
+        calculate_score(
+            row["steps"],
+            row["sleep_hours"],
+            row["water_ml"],
+            row["exercise_min"],
+            row["mood"]
+        ),
+        axis=1
+    )
+
+    return week.sort_values(
+        "log_date"
+    )
+
+
+def get_best_habit(week):
+
+    if week.empty:
+        return "기록 시작"
+
+    habits = {
+        "🏃 활동량": week["exercise_min"].mean(),
+        "🚶 걸음 수": week["steps"].mean(),
+        "💧 물 섭취": week["water_ml"].mean(),
+        "😴 수면": week["sleep_hours"].mean(),
+        "🙂 기분": week["mood"].mean()
+    }
+
+    return max(
+        habits,
+        key=habits.get
+    )
+
+
+def get_recommendation(week):
+
+    if week.empty:
+
+        return "먼저 오늘의 생활 기록을 남겨보세요."
+
+    avg_steps = week["steps"].mean()
+    avg_water = week["water_ml"].mean()
+    avg_sleep = week["sleep_hours"].mean()
+    avg_exercise = week["exercise_min"].mean()
+
+    if avg_steps < 5000:
+
+        return "🚶 다음 주에는 하루에 조금 더 걸어보는 것을 추천해요."
+
+    if avg_water < 1000:
+
+        return "💧 물 섭취 기록을 조금 더 꾸준히 유지해보세요."
+
+    if avg_sleep < 6.5:
+
+        return "😴 수면 시간을 조금 더 확보하는 것을 추천해요."
+
+    if avg_exercise < 20:
+
+        return "🏃 하루에 짧게라도 몸을 움직이는 습관을 만들어보세요."
+
+    return "🔥 지금처럼 좋은 생활 습관과 기록을 꾸준히 유지해보세요!"
+
+
+# ============================================================
+# SIDEBAR
+# ============================================================
+
+xp, points = get_progress()
+
+level, level_name, next_xp = get_level(xp)
+
+st.sidebar.title("🚀 Life of Booster")
+
+st.sidebar.write(
+    f"### {level_name}"
+)
+
+st.sidebar.write(
+    f"**Lv.{level}**"
+)
+
+st.sidebar.metric(
+    "⭐ XP",
+    xp
+)
+
+st.sidebar.metric(
+    "💰 Points",
+    points
+)
+
+st.sidebar.divider()
+
+page = st.sidebar.radio(
+    "메뉴",
+    [
+        "🏠 오늘의 Booster",
+        "📊 주간 리포트",
+        "🏆 배지 & 레벨",
+        "📋 전체 기록"
+    ]
+)
+
+st.sidebar.divider()
+
+st.sidebar.metric(
+    "🔥 연속 기록",
+    f"{get_streak()}일"
+)
+
+
+# ============================================================
+# PAGE 1
+# TODAY
+# ============================================================
+
+if page == "🏠 오늘의 Booster":
+
+    st.markdown(
+        "# 🚀 Life of Booster"
+    )
+
+    st.caption(
+        "오늘의 생활 습관을 기록하고 Booster를 받아보세요."
+    )
+
     st.info(
-        "이 앱은 건강 관리의 참고용 습관 기록 서비스입니다. "
-        "의료 진단이나 치료를 대신하지 않습니다."
+        "🌱 완벽할 필요는 없어요. "
+        "작은 습관을 하나씩 기록해보세요."
     )
 
-if page == "오늘의 Booster":
-    st.subheader("오늘의 생활 데이터")
+    today_log = get_today_log()
 
-    df = load_logs()
-    today = date.today()
-    existing = df[df["log_date"] == str(today)]
+    if today_log:
 
-    if not existing.empty:
-        row = existing.iloc[0]
-        default_steps = int(row["steps"])
-        default_sleep = float(row["sleep_hours"])
-        default_water = int(row["water_ml"])
-        default_exercise = int(row["exercise_min"])
-        default_mood = int(row["mood"])
-        default_note = str(row["note"] or "")
+        default_steps = today_log[0]
+        default_sleep = today_log[1]
+        default_water = today_log[2]
+        default_exercise = today_log[3]
+        default_mood = today_log[4]
+        default_note = today_log[5] or ""
+
     else:
+
         default_steps = 3000
         default_sleep = 7.0
         default_water = 500
@@ -196,118 +740,637 @@ if page == "오늘의 Booster":
         default_mood = 3
         default_note = ""
 
-    with st.form("daily_form"):
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            steps = st.number_input("🚶 걸음 수", 0, 50000, default_steps, step=500)
-            sleep_hours = st.number_input("😴 수면 시간", 0.0, 24.0, default_sleep, step=0.5)
-        with c2:
-            water_ml = st.number_input("💧 물 섭취량 (mL)", 0, 10000, default_water, step=100)
-            exercise_min = st.number_input("🏃 활동 시간 (분)", 0, 600, default_exercise, step=5)
-        with c3:
-            mood = st.slider("🙂 오늘 기분", 1, 5, default_mood)
-            note = st.text_area("📝 오늘 한 줄 기록", value=default_note)
+    st.subheader("📝 오늘의 생활 기록")
 
-        submitted = st.form_submit_button("오늘 기록 저장", type="primary")
+    with st.form("daily_form"):
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            steps = st.number_input(
+                "🚶 걸음 수",
+                min_value=0,
+                max_value=50000,
+                value=int(default_steps),
+                step=500
+            )
+
+            sleep_hours = st.number_input(
+                "😴 수면 시간",
+                min_value=0.0,
+                max_value=24.0,
+                value=float(default_sleep),
+                step=0.5
+            )
+
+            water_ml = st.number_input(
+                "💧 물 섭취량 (mL)",
+                min_value=0,
+                max_value=10000,
+                value=int(default_water),
+                step=100
+            )
+
+        with col2:
+
+            exercise_min = st.number_input(
+                "🏃 운동 / 활동 시간 (분)",
+                min_value=0,
+                max_value=600,
+                value=int(default_exercise),
+                step=5
+            )
+
+            mood = st.slider(
+                "🙂 오늘의 기분",
+                min_value=1,
+                max_value=5,
+                value=int(default_mood)
+            )
+
+            note = st.text_area(
+                "📝 오늘의 메모",
+                value=default_note
+            )
+
+        submitted = st.form_submit_button(
+            "💾 오늘 기록 저장",
+            use_container_width=True
+        )
 
     if submitted:
-        save_log(today, steps, sleep_hours, water_ml, exercise_min, mood, note)
-        st.success("오늘의 기록을 저장했습니다!")
+
+        save_daily_log(
+            date.today(),
+            steps,
+            sleep_hours,
+            water_ml,
+            exercise_min,
+            mood,
+            note
+        )
+
+        update_badges()
+
+        st.success(
+            "✅ 오늘의 기록이 저장되었습니다!"
+        )
+
         st.rerun()
 
-    score = calculate_score(steps, sleep_hours, water_ml, exercise_min, mood)
-    points = calculate_points(score)
-    mission_title, mission_text = get_mission(
-        steps, sleep_hours, water_ml, exercise_min, mood
+    # SCORE
+
+    score = calculate_score(
+        steps,
+        sleep_hours,
+        water_ml,
+        exercise_min,
+        mood
     )
 
-    st.divider()
-    st.subheader("📊 오늘의 Booster Score")
+    xp, points = get_progress()
 
-    m1, m2, m3 = st.columns(3)
-    m1.metric("생활 점수", f"{score}/100")
-    m2.metric("예상 획득 포인트", f"+{points} P")
-    m3.metric("연속 기록", f"{calculate_streak(df)}일")
+    level, level_name, next_xp = get_level(xp)
 
-    st.progress(score / 100)
+    st.subheader("📊 오늘의 Booster")
 
-    st.subheader("🎯 오늘의 맞춤 미션")
-    st.info(f"**{mission_title}**\n\n{mission_text}")
+    col1, col2, col3, col4 = st.columns(4)
 
-    if st.button("🤖 AI로 추천받기"):
-        with st.spinner("AI가 오늘의 데이터를 분석하고 있어요..."):
-            result = ai_recommendation(
-                score, steps, sleep_hours, water_ml, exercise_min, mood
+    with col1:
+
+        st.metric(
+            "⭐ 생활 점수",
+            f"{score}"
+        )
+
+    with col2:
+
+        st.metric(
+            "✨ XP",
+            f"{xp}"
+        )
+
+    with col3:
+
+        st.metric(
+            "🏆 레벨",
+            f"Lv.{level}"
+        )
+
+    with col4:
+
+        st.metric(
+            "💰 포인트",
+            f"{points}"
+        )
+
+    st.progress(
+        min(
+            xp / next_xp,
+            1.0
+        )
+    )
+
+    st.caption(
+        f"{level_name} · 다음 레벨까지 "
+        f"{max(next_xp - xp, 0)} XP"
+    )
+
+    # MISSION
+
+    st.subheader("🎯 오늘의 미션")
+
+    (
+        mission_title,
+        mission_text,
+        mission_xp,
+        mission_points
+    ) = get_today_mission(
+        steps,
+        sleep_hours,
+        water_ml,
+        exercise_min,
+        mood
+    )
+
+    st.info(
+        f"""
+        ### {mission_title}
+
+        {mission_text}
+
+        **+{mission_xp} XP**
+        ·
+        **+{mission_points} Points**
+        """
+    )
+
+    if mission_completed_today():
+
+        st.success(
+            "🎉 오늘의 미션을 이미 완료했어요!"
+        )
+
+    else:
+
+        if st.button(
+            "🎯 미션 완료하기",
+            use_container_width=True
+        ):
+
+            complete_mission(
+                mission_title,
+                mission_xp,
+                mission_points
             )
-        st.markdown("### AI Booster")
-        st.write(result)
 
-    if score >= 80:
-        st.success("🏆 훌륭해요! 오늘의 생활 습관을 잘 관리하고 있어요.")
-    elif score >= 60:
-        st.warning("🔥 좋아요! 작은 미션 하나만 더 실천해 봐요.")
+            add_rewards(
+                mission_xp,
+                mission_points
+            )
+
+            update_badges()
+
+            st.success(
+                f"🎉 미션 완료! "
+                f"+{mission_xp} XP / "
+                f"+{mission_points} Points"
+            )
+
+            st.rerun()
+
+
+# ============================================================
+# PAGE 2
+# WEEKLY REPORT
+# ============================================================
+
+elif page == "📊 주간 리포트":
+
+    st.title("📊 주간 리포트")
+
+    st.caption(
+        "이번 주 생활 습관을 한눈에 확인해보세요."
+    )
+
+    week = get_week_data()
+
+    if week.empty:
+
+        st.warning(
+            "이번 주 기록이 아직 없습니다."
+        )
+
+        st.info(
+            "🏠 오늘의 Booster에서 생활 기록을 추가해보세요."
+        )
+
     else:
-        st.info("🌱 완벽할 필요 없어요. 오늘은 작은 행동 하나부터 시작해 봐요.")
 
-elif page == "기록 보기":
-    st.subheader("📅 생활 기록")
+        average_score = round(
+            week["score"].mean(),
+            1
+        )
 
-    df = load_logs()
+        st.subheader(
+            "🌟 이번 주 생활 점수"
+        )
+
+        st.metric(
+            "평균 점수",
+            f"{average_score} / 100"
+        )
+
+        st.progress(
+            average_score / 100
+        )
+
+        if average_score >= 85:
+
+            st.success(
+                "🏆 정말 좋은 한 주였어요!"
+            )
+
+        elif average_score >= 70:
+
+            st.success(
+                "🔥 좋은 흐름이에요! 계속 유지해보세요."
+            )
+
+        elif average_score >= 50:
+
+            st.info(
+                "🌱 잘하고 있어요. 작은 습관부터 꾸준히!"
+            )
+
+        else:
+
+            st.info(
+                "💪 기록을 시작한 것 자체가 좋은 시작이에요."
+            )
+
+        st.subheader("📌 이번 주 평균")
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+
+            st.metric(
+                "🚶 평균 걸음",
+                f"{round(week['steps'].mean()):,}"
+            )
+
+        with col2:
+
+            st.metric(
+                "💧 평균 물",
+                f"{round(week['water_ml'].mean()):,} mL"
+            )
+
+        with col3:
+
+            st.metric(
+                "😴 평균 수면",
+                f"{week['sleep_hours'].mean():.1f} h"
+            )
+
+        with col4:
+
+            st.metric(
+                "🏃 평균 활동",
+                f"{round(week['exercise_min'].mean())} 분"
+            )
+
+        st.subheader("📈 일별 생활 점수")
+
+        chart_df = week[
+            ["log_date", "score"]
+        ].copy()
+
+        chart_df = chart_df.set_index(
+            "log_date"
+        )
+
+        st.line_chart(
+            chart_df,
+            use_container_width=True
+        )
+
+        st.subheader("📅 이번 주 기록")
+
+        for _, row in week.iterrows():
+
+            weekday = row["log_date"].strftime(
+                "%A"
+            )
+
+            weekday_korean = {
+                "Monday": "월",
+                "Tuesday": "화",
+                "Wednesday": "수",
+                "Thursday": "목",
+                "Friday": "금",
+                "Saturday": "토",
+                "Sunday": "일"
+            }.get(
+                weekday,
+                weekday
+            )
+
+            score_value = int(
+                row["score"]
+            )
+
+            st.write(
+                f"**{weekday_korean}** "
+                f"— "
+                f"**{score_value}점**"
+            )
+
+            st.progress(
+                score_value / 100
+            )
+
+        st.subheader("🌟 이번 주 가장 좋아진 습관")
+
+        best_habit = get_best_habit(
+            week
+        )
+
+        st.success(
+            f"이번 주에는 **{best_habit}**이 "
+            f"가장 돋보였어요!"
+        )
+
+        st.subheader("🎯 다음 주 추천")
+
+        recommendation = get_recommendation(
+            week
+        )
+
+        st.info(
+            recommendation
+        )
+
+        st.subheader("📝 WEEKLY SUMMARY")
+
+        st.write(
+            f"""
+            이번 주에는 **{len(week)}일** 동안 기록했어요.
+
+            평균 생활 점수는 **{average_score}점**입니다.
+
+            가장 돋보였던 습관은
+            **{best_habit}**입니다.
+
+            다음 주에도 완벽하게 하려고 하기보다
+            작은 행동을 꾸준히 이어가 보세요. 🌱
+            """
+        )
+
+        with st.expander(
+            "📋 이번 주 상세 기록 보기"
+        ):
+
+            detail = week.copy()
+
+            detail["log_date"] = (
+                detail["log_date"]
+                .dt.strftime("%Y-%m-%d")
+            )
+
+            detail = detail[
+                [
+                    "log_date",
+                    "score",
+                    "steps",
+                    "sleep_hours",
+                    "water_ml",
+                    "exercise_min",
+                    "mood",
+                    "note"
+                ]
+            ]
+
+            detail.columns = [
+                "날짜",
+                "생활 점수",
+                "걸음 수",
+                "수면 시간",
+                "물(mL)",
+                "활동(분)",
+                "기분",
+                "메모"
+            ]
+
+            st.dataframe(
+                detail,
+                use_container_width=True,
+                hide_index=True
+            )
+
+
+# ============================================================
+# PAGE 3
+# BADGES
+# ============================================================
+
+elif page == "🏆 배지 & 레벨":
+
+    st.title("🏆 배지 & 레벨")
+
+    update_badges()
+
+    xp, points = get_progress()
+
+    level, level_name, next_xp = get_level(
+        xp
+    )
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+
+        st.metric(
+            "🏆 현재 레벨",
+            f"Lv.{level}"
+        )
+
+    with col2:
+
+        st.metric(
+            "✨ XP",
+            xp
+        )
+
+    with col3:
+
+        st.metric(
+            "💰 포인트",
+            points
+        )
+
+    st.subheader(
+        level_name
+    )
+
+    if level < 5:
+
+        st.progress(
+            min(
+                xp / next_xp,
+                1.0
+            )
+        )
+
+        st.caption(
+            f"다음 레벨까지 "
+            f"{next_xp - xp} XP"
+        )
+
+    else:
+
+        st.success(
+            "🏆 최고 레벨에 도달했어요!"
+        )
+
+    st.subheader(
+        "🎖️ 획득한 배지"
+    )
+
+    badges = get_badges()
+
+    if badges.empty:
+
+        st.info(
+            "아직 획득한 배지가 없습니다."
+        )
+
+    else:
+
+        for _, badge in badges.iterrows():
+
+            st.success(
+                f"""
+                ### {badge["badge_name"]}
+
+                {badge["badge_description"]}
+
+                획득일: {badge["earned_date"]}
+                """
+            )
+
+
+# ============================================================
+# PAGE 4
+# ALL RECORDS
+# ============================================================
+
+elif page == "📋 전체 기록":
+
+    st.title("📋 전체 기록")
+
+    st.caption(
+        "지금까지 기록한 생활 데이터를 확인하세요."
+    )
+
+    df = get_all_logs()
+
     if df.empty:
-        st.info("아직 기록이 없습니다. '오늘의 Booster'에서 기록을 추가해 주세요.")
+
+        st.info(
+            "아직 생활 기록이 없습니다."
+        )
+
     else:
-        chart_df = df.copy()
-        chart_df["log_date"] = pd.to_datetime(chart_df["log_date"])
-        chart_df["score"] = chart_df.apply(
-            lambda r: calculate_score(
-                r["steps"], r["sleep_hours"], r["water_ml"],
-                r["exercise_min"], r["mood"]
-            ), axis=1
+
+        df["log_date"] = pd.to_datetime(
+            df["log_date"]
         )
-        chart_df = chart_df.sort_values("log_date")
 
-        st.line_chart(chart_df.set_index("log_date")[["score"]])
+        df["score"] = df.apply(
+            lambda row:
+            calculate_score(
+                row["steps"],
+                row["sleep_hours"],
+                row["water_ml"],
+                row["exercise_min"],
+                row["mood"]
+            ),
+            axis=1
+        )
 
-        st.subheader("최근 기록")
+        st.subheader(
+            "📈 생활 점수 변화"
+        )
+
+        chart_df = df[
+            ["log_date", "score"]
+        ].sort_values(
+            "log_date"
+        )
+
+        chart_df = chart_df.set_index(
+            "log_date"
+        )
+
+        st.line_chart(
+            chart_df,
+            use_container_width=True
+        )
+
+        st.subheader(
+            "📊 전체 기록"
+        )
+
+        display_df = df.copy()
+
+        display_df["log_date"] = (
+            display_df["log_date"]
+            .dt.strftime("%Y-%m-%d")
+        )
+
+        display_df = display_df[
+            [
+                "log_date",
+                "score",
+                "steps",
+                "sleep_hours",
+                "water_ml",
+                "exercise_min",
+                "mood",
+                "note"
+            ]
+        ]
+
+        display_df.columns = [
+            "날짜",
+            "생활 점수",
+            "걸음 수",
+            "수면 시간",
+            "물(mL)",
+            "활동(분)",
+            "기분",
+            "메모"
+        ]
+
         st.dataframe(
-            chart_df.sort_values("log_date", ascending=False),
+            display_df,
             use_container_width=True,
-            hide_index=True,
+            hide_index=True
         )
 
-        csv = chart_df.to_csv(index=False).encode("utf-8-sig")
+        csv = display_df.to_csv(
+            index=False
+        ).encode(
+            "utf-8-sig"
+        )
+
         st.download_button(
-            "⬇️ CSV로 내보내기",
+            "📥 CSV 다운로드",
             csv,
-            "life_of_booster_history.csv",
+            "life_of_booster_records.csv",
             "text/csv",
+            use_container_width=True
         )
-
-elif page == "프로젝트 설명":
-    st.subheader("📖 Life of Booster MVP")
-
-    st.markdown("""
-### 프로젝트 목표
-개인화된 생활 데이터를 바탕으로 사용자가 실천할 수 있는 작은 활동을 추천하고,
-기록과 포인트를 통해 지속적인 동기를 제공하는 서비스입니다.
-
-### 현재 구현된 기능
-- 생활 데이터 입력: 걸음 수 / 수면 / 물 / 활동 / 기분
-- 0~100 생활 점수 계산
-- 개인 맞춤형 오늘의 미션
-- 포인트 계산
-- 연속 기록(Streak)
-- SQLite 데이터 저장
-- 기록 그래프
-- CSV 다운로드
-- OpenAI API를 연결할 경우 AI 추천 기능 사용
-- API 키가 없어도 규칙 기반 추천으로 앱 실행 가능
-
-### 다음 개발 단계
-1. 로그인 및 사용자별 데이터 분리
-2. 실제 스마트폰 건강 데이터 연동
-3. 미니게임/퀘스트 시스템
-4. 포인트 상점과 배지
-5. 주간 리포트
-6. AI 기반 개인화 추천 고도화
-""")
