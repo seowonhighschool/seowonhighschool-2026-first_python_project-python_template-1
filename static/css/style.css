@@ -1,0 +1,853 @@
+/* =========================================
+   CSS Variables (Design Tokens)
+   ========================================= */
+:root {
+  /* Colors */
+  --color-primary:       #4F46E5;
+  --color-primary-dark:  #4338CA;
+  --color-primary-light: #EEF2FF;
+  --color-accent:        #10B981;
+  --color-accent-light:  #ECFDF5;
+  --color-bg:            #F9FAFB;
+  --color-surface:       #FFFFFF;
+  --color-text:          #111827;
+  --color-text-sub:      #6B7280;
+  --color-border:        #E5E7EB;
+  --color-error:         #EF4444;
+  --color-success:       #10B981;
+  --color-overlay:       rgba(17, 24, 39, 0.4);  /* 다이얼로그 뒤 배경 */
+
+  /* Category Colors */
+  --color-food:      #FF6B6B;
+  --color-cafe:      #C49A6C;
+  --color-transport: #4ECDC4;
+  --color-shopping:  #9B59B6;
+  --color-medical:   #2ECC71;
+  --color-leisure:   #F39C12;
+  --color-etc:       #95A5A6;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 100px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  /* Layout */
+  --header-height:  56px;
+  --tab-nav-height: 64px;
+  --max-width:      768px;
+}
+
+/* =========================================
+   Reset & Base
+   ========================================= */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* .loading-overlay 등이 display를 지정하고 있어 브라우저 기본 [hidden]을 덮어쓴다.
+   이 규칙이 없으면 로딩 오버레이가 화면을 계속 가린다. */
+[hidden] {
+  display: none !important;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Segoe UI', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  min-height: 100vh;
+  padding-bottom: var(--tab-nav-height);
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: none;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+/* =========================================
+   Header
+   ========================================= */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  height: var(--header-height);
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  height: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header__logo {
+  font-size: 1.4rem;
+}
+
+.header__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+}
+
+/* =========================================
+   Main Content
+   ========================================= */
+.main {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+}
+
+/* =========================================
+   Tab Content
+   ========================================= */
+.tab-content {
+  display: none;
+}
+
+.tab-content--active {
+  display: block;
+}
+
+/* =========================================
+   Section Header
+   ========================================= */
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.section-header--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-header__title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.section-header__desc {
+  font-size: 0.875rem;
+  color: var(--color-text-sub);
+}
+
+/* =========================================
+   Card
+   ========================================= */
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.card__title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 1rem;
+}
+
+/* =========================================
+   Form Elements
+   ========================================= */
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-sub);
+  margin-bottom: 0.5rem;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  resize: vertical;
+  color: var(--color-text);
+  background: var(--color-bg);
+  transition: border-color 0.15s;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+
+.form-input {
+  padding: 0.6rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  transition: border-color 0.15s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.form-select {
+  padding: 0.6rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  transition: border-color 0.15s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+/* 미리보기 안처럼 다른 값들과 한 줄에 놓이는 드롭다운.
+   16px 미만이면 iOS Safari가 포커스 때 화면을 확대하고, 44px 미만이면 손가락으로 누르기 어렵다. */
+.form-select--inline {
+  font-size: 1rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+}
+
+/* =========================================
+   Buttons
+   ========================================= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.btn--primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: var(--color-primary-dark);
+}
+
+.btn--outline {
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.btn--outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn--full {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* 되돌릴 수 없는 동작(삭제)에만 쓴다 */
+.btn--danger {
+  background: var(--color-error);
+  color: #fff;
+}
+
+.btn--danger:hover {
+  filter: brightness(0.92);
+}
+
+/* =========================================
+   Parse Result
+   ========================================= */
+.parse-result__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.parse-result__badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-accent-light);
+  padding: 0.2rem 0.7rem;
+  border-radius: var(--radius-pill);
+}
+
+.parse-result__store {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.parse-result__amount {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-primary);
+  margin-bottom: 1rem;
+}
+
+.parse-result__meta {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  margin-bottom: 1.25rem;
+}
+
+.parse-result__meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.parse-result__meta-label {
+  font-size: 0.7rem;
+  color: var(--color-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.parse-result__meta-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.parse-result__hint {
+  font-size: 0.75rem;
+  color: var(--color-text-sub);
+  margin-bottom: 0.75rem;
+}
+
+.parse-result__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.parse-result__actions .btn {
+  flex: 1;
+  margin-top: 0;
+}
+
+/* =========================================
+   Stat Card
+   ========================================= */
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-card__label {
+  font-size: 0.8rem;
+  color: var(--color-text-sub);
+  font-weight: 500;
+}
+
+.stat-card__value {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-text);
+}
+
+/* =========================================
+   Month Picker
+   ========================================= */
+.month-picker {
+  padding: 0.4rem 0.75rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  transition: border-color 0.15s;
+}
+
+.month-picker:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+/* =========================================
+   Chart
+   ========================================= */
+.chart-wrapper {
+  position: relative;
+  height: 240px;
+}
+
+/* =========================================
+   Filter Bar
+   ========================================= */
+.filter-bar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-bar .form-input,
+.filter-bar .form-select {
+  flex: 1;
+  min-width: 110px;
+}
+
+.form-input--search {
+  min-width: 140px;
+}
+
+/* =========================================
+   List Summary (조회 건수)
+   ========================================= */
+.list-summary {
+  font-size: 0.875rem;
+  color: var(--color-text-sub);
+  margin: 0 0 0.5rem;
+  padding: 0 0.25rem;
+}
+
+/* =========================================
+   Table
+   ========================================= */
+.table-wrapper {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+  white-space: nowrap;
+}
+
+/* 날짜·카테고리·금액은 한 줄로 둔다. '☕ 카/페', '12,000/원'처럼 끊기면 표를 읽기 어렵다. */
+.table td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+/* 칸 사이 여백은 좁혀 375px에서도 한 줄에 들어가게 하고, 양 끝 칸만 카드 가장자리와 띄운다 */
+.table th:first-child,
+.table td:first-child {
+  padding-left: 1rem;
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: 1rem;
+}
+
+/* 내역 행은 누르면 상세(시간·카드사·삭제)가 열린다 */
+.table__row--clickable {
+  cursor: pointer;
+}
+
+/* 상점명 버튼은 글자처럼 보이게 한다. button 기본 글꼴 크기(13px 안팎)를 쓰지 않도록 font를 상속한다. */
+.table__store-btn {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.table__store-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 상점명 칸만 줄바꿈을 허용한다. 남는 폭을 이 칸이 가져가고 단어 단위로 끊는다.
+   공백 없이 긴 이름이 그래도 넘치면 그때만 글자 단위로 끊는다.
+   min-width가 없으면 다른 칸이 넓을 때 한두 글자 폭까지 눌려 세로로 길어진다. */
+.table td:nth-child(2) {
+  min-width: 4rem;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: var(--color-bg);
+}
+
+/* .table th(text-align: left)보다 우선해야 해서 th까지 붙인다. 없으면 헤더만 왼쪽에 붙어 금액 열과 어긋난다. */
+.table th.table__amount-col {
+  text-align: right;
+}
+
+.table td:last-child {
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* .table td:last-child(금액 열: 우측 정렬·굵게·주색)와 hover 배경보다 우선해야 해서
+   tr까지 붙여 우선순위를 올린다. 빈 행은 셀이 하나라 last-child 규칙에 걸린다. */
+.table tr.table__empty-row td {
+  text-align: center;
+  font-weight: 400;
+  color: var(--color-text-sub);
+  background: none;
+  padding: 1rem;
+  font-size: 0.875rem;
+  white-space: normal;
+}
+
+/* =========================================
+   Empty State
+   ========================================= */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0;
+  text-align: center;
+  /* 한국어가 '여/기에'처럼 단어 중간에서 줄바꿈되지 않게 한다 */
+  word-break: keep-all;
+}
+
+.empty-state__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.empty-state__desc {
+  font-size: 0.875rem;
+  color: var(--color-text-sub);
+}
+
+.empty-state__action {
+  margin-top: 0.5rem;
+}
+
+/* =========================================
+   Peer Summary
+   ========================================= */
+.peer-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.peer-summary__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.peer-summary__label {
+  font-size: 0.72rem;
+  color: var(--color-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.peer-summary__value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+}
+
+.peer-summary__value--muted {
+  color: var(--color-text-sub);
+}
+
+.peer-summary__divider {
+  width: 1px;
+  height: 40px;
+  background: var(--color-border);
+}
+
+/* =========================================
+   Advice Card
+   ========================================= */
+.advice-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.advice-card__icon {
+  font-size: 1.2rem;
+}
+
+.advice-card__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.advice-card__text {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: var(--color-text-sub);
+}
+
+/* =========================================
+   Dialog (거래 상세)
+   ========================================= */
+.dialog {
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 0;
+  width: calc(100% - 2rem);
+  max-width: 24rem;
+  margin: auto;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+}
+
+.dialog::backdrop {
+  background: var(--color-overlay);
+}
+
+.dialog__body {
+  padding: 1.5rem;
+}
+
+.dialog__title {
+  font-size: 1rem;
+  font-weight: 600;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.dialog__amount {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-primary);
+  margin-bottom: 1rem;
+}
+
+.dialog__list {
+  border-top: 1px solid var(--color-border);
+}
+
+.dialog__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.875rem;
+}
+
+.dialog__row dt {
+  color: var(--color-text-sub);
+}
+
+.dialog__row dd {
+  font-weight: 600;
+  text-align: right;
+}
+
+.dialog__note {
+  font-size: 0.75rem;
+  color: var(--color-text-sub);
+  margin: 1rem 0 0.75rem;
+}
+
+.dialog__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.dialog__actions .btn {
+  flex: 1;
+}
+
+/* =========================================
+   Toast
+   ========================================= */
+.toast {
+  position: fixed;
+  bottom: calc(var(--tab-nav-height) + 1rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-text);
+  color: #fff;
+  padding: 0.7rem 1.5rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 200;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+}
+
+.toast--success {
+  background: var(--color-success);
+}
+
+.toast--error {
+  background: var(--color-error);
+}
+
+/* =========================================
+   Loading Overlay
+   ========================================= */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =========================================
+   Bottom Tab Navigation
+   ========================================= */
+.tab-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  height: var(--tab-nav-height);
+}
+
+.tab-nav__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0.5rem;
+  color: var(--color-text-sub);
+  font-size: 0.68rem;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.tab-nav__item--active {
+  color: var(--color-primary);
+}
+
+.tab-nav__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.tab-nav__label {
+  letter-spacing: -0.01em;
+}
+
+/* =========================================
+   Responsive
+   ========================================= */
+@media (max-width: 480px) {
+  .parse-result__amount {
+    font-size: 1.75rem;
+  }
+
+  .stat-card__value {
+    font-size: 1.75rem;
+  }
+
+  .peer-summary__value {
+    font-size: 1.25rem;
+  }
+}
