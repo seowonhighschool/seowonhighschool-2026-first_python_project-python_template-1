@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0B0D14">
+  <title>스마트 가계부</title>
+  <!-- Pretendard(OFL). Windows에는 기본 설치돼 있지 않아 웹폰트로 불러온다.
+       .min.css는 jsDelivr가 즉석에서 압축하는 파일이라 SRI가 깨질 수 있어 원본 .css를 쓴다. -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css"
+    integrity="sha384-2nNKoOPayicGa+aRguOQuiZP+RqQ4G3jalfDeOgftkKD7zBM2gJXTwcFqCZltdv0"
+    crossorigin="anonymous">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- 버전을 고정한다. 태그 없이 쓰면 Chart.js 메이저 업데이트 때 대시보드가 조용히 깨진다.
+       integrity는 파일이 변조되면 브라우저가 로드를 거부하게 한다. -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"
+    integrity="sha384-XcdcwHqIPULERb2yDEM4R0XaQKU3YnDsrTmjACBZyfdVVqjh6xQ4/DCMd7XLcA6Y"
+    crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- ========== Header ========== -->
+  <header class="header">
+    <div class="header__inner">
+      <div class="header__brand">
+        <span class="header__logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/><path d="M6 15h4"/>
+          </svg>
+        </span>
+        <span class="header__title">스마트 가계부</span>
+      </div>
+      <!-- 로그인한 뒤에만 보인다 (main.js enterApp) -->
+      <div class="header__user" id="header-user" hidden>
+        <span class="header__username" id="header-username"></span>
+        <button type="button" class="header__logout" id="logout-btn">로그아웃</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== 로그인 · 회원가입 ==========
+       시작할 때 main.js가 /api/auth/me로 확인해서 이 화면과 앱(main + 탭 바) 중 하나만 보여준다.
+       확인 전에는 둘 다 숨겨서 로그인 화면이 잠깐 깜빡이지 않게 한다. -->
+  <section class="auth" id="auth-screen" hidden>
+    <div class="auth__brand">
+      <span class="auth__logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/><path d="M6 15h4"/>
+        </svg>
+      </span>
+      <h1 class="auth__title">스마트 가계부</h1>
+      <p class="auth__desc">결제 문자만 붙여넣으면 가계부가 정리돼요</p>
+    </div>
+
+    <div class="card auth__card">
+      <div class="auth__switch" role="tablist" aria-label="로그인 또는 회원가입">
+        <button type="button" class="auth__switch-btn auth__switch-btn--active" role="tab"
+                data-auth-mode="login" aria-selected="true" aria-controls="login-form">로그인</button>
+        <button type="button" class="auth__switch-btn" role="tab"
+                data-auth-mode="signup" aria-selected="false" aria-controls="signup-form">회원가입</button>
+      </div>
+
+      <!-- 입력 검증은 서버가 한다 (브라우저 기본 검증 말풍선은 문구를 바꿀 수 없어서 끈다) -->
+      <form class="auth__form" id="login-form" novalidate>
+        <div class="auth__field">
+          <label class="form-label" for="login-username">아이디</label>
+          <input class="form-input" id="login-username" name="username" type="text"
+                 autocomplete="username" autocapitalize="none" spellcheck="false">
+        </div>
+        <div class="auth__field">
+          <label class="form-label" for="login-password">비밀번호</label>
+          <input class="form-input" id="login-password" name="password" type="password"
+                 autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn--primary btn--full">로그인</button>
+      </form>
+
+      <form class="auth__form" id="signup-form" novalidate hidden>
+        <div class="auth__field">
+          <label class="form-label" for="signup-username">아이디</label>
+          <input class="form-input" id="signup-username" name="username" type="text"
+                 autocomplete="username" autocapitalize="none" spellcheck="false"
+                 aria-describedby="signup-username-hint">
+          <p class="auth__hint" id="signup-username-hint">영문 소문자·숫자·_ 로 3~20자</p>
+        </div>
+        <div class="auth__field">
+          <label class="form-label" for="signup-password">비밀번호</label>
+          <input class="form-input" id="signup-password" name="password" type="password"
+                 autocomplete="new-password" aria-describedby="signup-password-hint">
+          <p class="auth__hint" id="signup-password-hint">8자 이상. 다른 사이트에서 쓰는 비밀번호는 피해주세요</p>
+        </div>
+        <div class="auth__row">
+          <div class="auth__field">
+            <label class="form-label" for="signup-age-group">연령대</label>
+            <!-- 선택지는 auth.js가 AI 분석 드롭다운에서 복사한다 (그룹 정의를 한 곳에서만 관리) -->
+            <select class="form-select" id="signup-age-group" name="age_group"></select>
+          </div>
+          <div class="auth__field">
+            <label class="form-label" for="signup-income-group">소득 구간</label>
+            <select class="form-select" id="signup-income-group" name="income_group"></select>
+          </div>
+        </div>
+        <p class="auth__hint">또래 비교 기본값으로 쓰여요. AI 분석 탭에서 다른 그룹과도 비교할 수 있어요</p>
+        <button type="submit" class="btn btn--primary btn--full">가입하고 시작하기</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ========== Main Content ========== -->
+  <main class="main" id="app-main" hidden>
+
+    <!-- Tab 1: 문자 입력 -->
+    <section class="tab-content tab-content--active" data-tab-content="input">
+      <div class="section-header">
+        <h2 class="section-header__title">문자 입력</h2>
+        <p class="section-header__desc">카드 결제 문자를 붙여넣으면 자동으로 분석해드려요</p>
+      </div>
+
+      <div class="card">
+        <label class="form-label" for="sms-input">결제 문자</label>
+        <textarea
+          class="form-textarea"
+          id="sms-input"
+          placeholder="[신한카드] 승인 12,000원 스타벅스 07/14 14:32 잔여한도 2,450,000원"
+          rows="5"
+          aria-label="카드 결제 문자 입력"
+        ></textarea>
+        <button class="btn btn--primary btn--full" id="parse-btn">
+          분석하기
+        </button>
+      </div>
+
+      <!-- 파싱 결과 미리보기 -->
+      <div class="card parse-result" id="parse-result" hidden>
+        <div class="parse-result__header">
+          <span class="parse-result__badge">분석 완료</span>
+          <span class="parse-result__store" id="result-store">—</span>
+        </div>
+        <div class="parse-result__amount" id="result-amount">0원</div>
+        <div class="parse-result__meta">
+          <div class="parse-result__meta-item">
+            <label class="parse-result__meta-label" for="result-category">카테고리</label>
+            <!-- 선택지는 main.js가 CATEGORY_MAP으로 채운다 (카테고리 정의를 한 곳에서만 관리) -->
+            <select class="form-select form-select--inline" id="result-category"
+                    aria-describedby="result-category-hint"></select>
+          </div>
+          <div class="parse-result__meta-item">
+            <span class="parse-result__meta-label">날짜 · 시간</span>
+            <span class="parse-result__meta-value" id="result-date">—</span>
+          </div>
+          <div class="parse-result__meta-item">
+            <span class="parse-result__meta-label">카드사</span>
+            <span class="parse-result__meta-value" id="result-card">—</span>
+          </div>
+        </div>
+        <p class="parse-result__hint" id="result-category-hint">
+          카테고리가 다르면 저장하기 전에 바꿔주세요
+        </p>
+        <div class="parse-result__actions">
+          <button class="btn btn--outline" id="reparse-btn">다시 입력</button>
+          <button class="btn btn--primary" id="save-btn">저장하기</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: 대시보드 -->
+    <section class="tab-content" data-tab-content="dashboard">
+      <div class="section-header section-header--row">
+        <h2 class="section-header__title">대시보드</h2>
+        <input
+          class="month-picker"
+          type="month"
+          id="dashboard-month"
+          aria-label="월 선택"
+        >
+      </div>
+
+      <div class="card stat-card stat-card--hero">
+        <span class="stat-card__label">이번 달 총 지출</span>
+        <span class="stat-card__value" id="total-amount">—</span>
+      </div>
+
+      <!-- 지출이 없는 달에는 차트 대신 이 안내가 보인다 (main.js loadDashboard) -->
+      <div class="card" id="dashboard-empty" hidden></div>
+
+      <div id="dashboard-charts">
+        <div class="card">
+          <h3 class="card__title">카테고리별 지출</h3>
+          <div class="chart-wrapper">
+            <canvas id="category-chart" aria-label="카테고리별 지출 차트"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card__title">일별 누적 지출</h3>
+          <div class="chart-wrapper">
+            <canvas id="daily-chart" aria-label="선택한 달 1일부터의 일별 누적 지출 차트"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- 선택한 달에 지출이 없어도 이전 달 추이는 보여준다. 6개월 모두 0원일 때만 숨긴다 -->
+      <div class="card" id="monthly-card" hidden>
+        <h3 class="card__title">최근 6개월 추이</h3>
+        <div class="chart-wrapper">
+          <canvas id="monthly-chart" aria-label="선택한 달까지 최근 6개월의 월별 지출 막대 차트"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: 내역 조회 -->
+    <section class="tab-content" data-tab-content="history">
+      <div class="section-header">
+        <h2 class="section-header__title">내역 조회</h2>
+      </div>
+
+      <div class="card filter-bar">
+        <input
+          class="form-input"
+          type="month"
+          id="history-month"
+          aria-label="월 필터"
+        >
+        <select class="form-select" id="history-category" aria-label="카테고리 필터">
+          <option value="">전체 카테고리</option>
+          <option value="food">🍽️ 식비</option>
+          <option value="cafe">☕ 카페</option>
+          <option value="transport">🚌 교통</option>
+          <option value="shopping">🛍️ 쇼핑</option>
+          <option value="medical">💊 의료</option>
+          <option value="leisure">🎬 문화/여가</option>
+          <option value="etc">📌 기타</option>
+        </select>
+        <input
+          class="form-input form-input--search"
+          type="text"
+          id="history-search"
+          placeholder="상점명 검색"
+          aria-label="상점명 검색"
+        >
+      </div>
+
+      <!-- 조회된 건수. 응답의 total을 보여준다 (0건이면 빈 상태 안내가 대신 설명한다) -->
+      <p class="list-summary" id="history-summary" aria-live="polite" hidden></p>
+
+      <div class="card table-wrapper">
+        <table class="table" role="table" aria-label="거래 내역">
+          <thead>
+            <tr>
+              <th>날짜</th>
+              <th>상점</th>
+              <th>카테고리</th>
+              <th class="table__amount-col">금액</th>
+            </tr>
+          </thead>
+          <tbody id="transaction-tbody">
+            <tr class="table__empty-row">
+              <td colspan="4">내역이 없습니다</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tab 4: AI 분석 -->
+    <section class="tab-content" data-tab-content="analysis">
+      <div class="section-header">
+        <h2 class="section-header__title">AI 분석</h2>
+        <p class="section-header__desc">또래 그룹과 내 소비를 비교해드려요</p>
+      </div>
+
+      <!-- 그룹 선택 드롭다운 -->
+      <div class="card filter-bar">
+        <select class="form-select" id="analysis-age-group" aria-label="나이 그룹 선택">
+          <option value="10대">10대</option>
+          <option value="20대초반" selected>20대 초반</option>
+          <option value="20대후반">20대 후반</option>
+          <option value="30대초반">30대 초반</option>
+          <option value="30대후반">30대 후반</option>
+          <option value="40대">40대</option>
+          <option value="50대">50대</option>
+          <option value="60대이상">60대 이상</option>
+        </select>
+        <select class="form-select" id="analysis-income-group" aria-label="소득 그룹 선택">
+          <option value="low">저소득</option>
+          <option value="mid-low" selected>중저소득</option>
+          <option value="mid-high">중고소득</option>
+          <option value="high">고소득</option>
+        </select>
+      </div>
+
+      <div class="card peer-summary">
+        <div class="peer-summary__item">
+          <span class="peer-summary__label">내 지출</span>
+          <span class="peer-summary__value" id="user-total">—</span>
+        </div>
+        <div class="peer-summary__divider"></div>
+        <div class="peer-summary__item">
+          <span class="peer-summary__label" id="peer-label">또래 평균</span>
+          <span class="peer-summary__value peer-summary__value--muted" id="peer-total">—</span>
+        </div>
+      </div>
+
+      <!-- 지출이 없는 달에는 비교 차트·조언 대신 이 안내가 보인다 (main.js loadAnalysis) -->
+      <div class="card" id="analysis-empty" hidden></div>
+
+      <div id="analysis-result">
+        <!-- 선택한 그룹의 또래 데이터가 없으면 비교 차트 대신 이 안내가 보인다 -->
+        <div class="card" id="comparison-empty" hidden></div>
+
+        <div class="card" id="comparison-card">
+          <h3 class="card__title">카테고리별 비교</h3>
+          <div class="chart-wrapper">
+            <canvas id="comparison-chart" aria-label="또래 비교 차트"></canvas>
+          </div>
+        </div>
+
+        <div class="card advice-card" id="advice-card">
+          <div class="advice-card__header">
+            <span class="advice-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>
+              </svg>
+            </span>
+            <span class="advice-card__title">AI 맞춤 조언</span>
+          </div>
+          <p class="advice-card__text" id="advice-text">분석 버튼을 눌러주세요</p>
+        </div>
+      </div>
+
+      <button class="btn btn--primary btn--full" id="refresh-analysis-btn">
+        분석 새로고침
+      </button>
+    </section>
+
+  </main>
+
+  <!-- ========== 하단 탭 네비게이션 ========== -->
+  <nav class="tab-nav" id="app-tab-nav" role="navigation" aria-label="메인 메뉴" hidden>
+    <!-- 아이콘은 글자색(currentColor)을 따라가서 활성 탭 색이 CSS 한 곳에서 정해진다 -->
+    <button class="tab-nav__item tab-nav__item--active" data-tab="input" aria-selected="true">
+      <svg class="tab-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/>
+      </svg>
+      <span class="tab-nav__label">문자 입력</span>
+    </button>
+    <button class="tab-nav__item" data-tab="dashboard" aria-selected="false">
+      <svg class="tab-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21.2 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
+      </svg>
+      <span class="tab-nav__label">대시보드</span>
+    </button>
+    <button class="tab-nav__item" data-tab="history" aria-selected="false">
+      <svg class="tab-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>
+      </svg>
+      <span class="tab-nav__label">내역 조회</span>
+    </button>
+    <button class="tab-nav__item" data-tab="analysis" aria-selected="false">
+      <svg class="tab-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>
+      </svg>
+      <span class="tab-nav__label">AI 분석</span>
+    </button>
+  </nav>
+
+  <!-- ========== 거래 상세 다이얼로그 (내역 조회에서 행을 누르면 열린다) ==========
+       삭제는 되돌릴 수 없으므로 상세를 보여준 뒤 '삭제' 버튼으로만 지운다.
+       처음 포커스는 안전한 쪽(닫기)에 둔다. Esc와 바깥 영역 클릭으로도 닫힌다. -->
+  <dialog class="dialog" id="transaction-dialog" aria-labelledby="transaction-dialog-title">
+    <div class="dialog__body">
+      <h2 class="dialog__title" id="transaction-dialog-title"></h2>
+      <p class="dialog__amount" id="transaction-dialog-amount"></p>
+      <dl class="dialog__list">
+        <div class="dialog__row">
+          <dt>날짜 · 시간</dt>
+          <dd id="transaction-dialog-datetime"></dd>
+        </div>
+        <div class="dialog__row">
+          <dt>카테고리</dt>
+          <dd id="transaction-dialog-category"></dd>
+        </div>
+        <div class="dialog__row">
+          <dt>카드사</dt>
+          <dd id="transaction-dialog-card"></dd>
+        </div>
+      </dl>
+      <p class="dialog__note">삭제하면 되돌릴 수 없어요</p>
+      <div class="dialog__actions">
+        <button type="button" class="btn btn--outline" id="dialog-close-btn" autofocus>닫기</button>
+        <button type="button" class="btn btn--danger" id="dialog-delete-btn">삭제</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ========== 토스트 알림 ========== -->
+  <div class="toast" id="toast" role="alert" aria-live="polite" hidden>
+    <span class="toast__message" id="toast-message"></span>
+  </div>
+
+  <!-- ========== 로딩 오버레이 ========== -->
+  <div class="loading-overlay" id="loading-overlay" hidden>
+    <div class="loading-spinner"></div>
+  </div>
+
+  <!-- ========== Scripts ========== -->
+  <!-- main.js가 utils/api/dashboard를 import하므로 진입점 하나만 넣으면 된다 -->
+  <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+</html>

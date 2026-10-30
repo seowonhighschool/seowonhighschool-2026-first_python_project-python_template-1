@@ -1,0 +1,16 @@
+[MAIN]
+# 학교 프로젝트 규모에 맞춰 문서화 강제는 끈다.
+#   C0114/C0115/C0116 : module/class/function docstring 누락
+#   W0718             : Flask 라우트의 최상위 except Exception은 의도된 방어막이다.
+#                       여기서 잡지 않으면 사용자에게 HTML 에러 페이지가 그대로 나간다.
+disable =
+    C0114,
+    C0115,
+    C0116,
+    W0718
+
+[FORMAT]
+max-line-length = 100
+
+[DESIGN]
+max-args = 6

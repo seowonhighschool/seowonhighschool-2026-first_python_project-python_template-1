@@ -1,0 +1,1162 @@
+/* =========================================
+   CSS Variables (Design Tokens) — 다크 프리미엄
+   ========================================= */
+:root {
+  /* 브라우저 기본 UI(월 선택 달력, 스크롤바, 자동완성)도 어둡게 그린다 */
+  color-scheme: dark;
+
+  /* Colors */
+  --color-primary:        #818CF8;  /* 어두운 배경 위 글자·강조·차트. #4F46E5는 글자로 쓰면 대비가 부족하다 */
+  --color-primary-strong: #4F46E5;  /* 버튼 배경 (흰 글자 대비 6:1 이상) */
+  --color-primary-hover:  #6366F1;
+  --color-primary-soft:   rgba(129, 140, 248, 0.14);  /* 활성 배경, 배지 */
+  --color-accent:         #34D399;
+  --color-accent-soft:    rgba(52, 211, 153, 0.14);
+  --color-bg:             #0B0D14;
+  --color-surface:        #151823;
+  --color-surface-raised: #1C2030;  /* 입력창, hover */
+  --color-text:           #F3F4F6;
+  --color-text-sub:       #9CA3AF;
+  --color-text-on-strong: #FFFFFF;  /* 진한 배경(버튼·토스트) 위 글자 */
+  --color-border:         #262B3B;
+  --color-border-soft:    rgba(255, 255, 255, 0.06);  /* 카드 테두리 */
+  --color-error:          #F87171;  /* 글자용 */
+  --color-error-strong:   #DC2626;  /* 위험 버튼·에러 토스트 배경 */
+  --color-success:        #34D399;
+  --color-success-strong: #059669;
+  --color-overlay:        rgba(0, 0, 0, 0.6);   /* 다이얼로그·로딩 뒤 배경 */
+  --color-glass:          rgba(11, 13, 20, 0.72); /* 헤더·탭 바 (뒤가 흐리게 비친다) */
+
+  --gradient-hero: linear-gradient(135deg, #312E81 0%, #1E1B4B 100%);
+
+  /* Category Colors — 의미가 고정이라 테마를 바꿔도 그대로 둔다 */
+  --color-food:      #FF6B6B;
+  --color-cafe:      #C49A6C;
+  --color-transport: #4ECDC4;
+  --color-shopping:  #9B59B6;
+  --color-medical:   #2ECC71;
+  --color-leisure:   #F39C12;
+  --color-etc:       #95A5A6;
+
+  /* Chart (dashboard.js가 cssVar()로 읽는다) */
+  --chart-grid:      rgba(255, 255, 255, 0.06);
+  --chart-muted-bar: #3A4058;
+  --chart-dim-bar:   rgba(129, 140, 248, 0.28);
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 100px;
+
+  /* Shadow — 어두운 화면에서는 그림자보다 테두리가 층을 나눈다. 떠 있는 요소에만 쓴다 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 8px 24px rgba(79, 70, 229, 0.35);
+
+  /* Layout */
+  --header-height:  56px;
+  --tab-nav-height: 64px;
+  --max-width:      768px;
+}
+
+/* =========================================
+   Reset & Base
+   ========================================= */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* .loading-overlay 등이 display를 지정하고 있어 브라우저 기본 [hidden]을 덮어쓴다.
+   이 규칙이 없으면 로딩 오버레이가 화면을 계속 가린다. */
+[hidden] {
+  display: none !important;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--color-bg);
+  /* 화면 위쪽에만 아주 옅은 인디고 빛을 깔아 평평한 검정보다 깊이감을 준다 */
+  background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(79, 70, 229, 0.18), transparent);
+  background-attachment: fixed;
+  color: var(--color-text);
+  line-height: 1.5;
+  min-height: 100vh;
+  padding-bottom: var(--tab-nav-height);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* =========================================
+   Header
+   ========================================= */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--color-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--color-border-soft);
+  height: var(--header-height);
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  height: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  background: var(--gradient-hero);
+  border: 1px solid var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.header__logo svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.header__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.header__user {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+  min-width: 0;
+}
+
+/* 긴 아이디가 로그아웃 버튼을 밀어내지 않게 말줄임 */
+.header__username {
+  font-size: 0.875rem;
+  color: var(--color-text-sub);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 글자 버튼이지만 터치 영역은 44px을 확보한다 */
+.header__logout {
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  transition: background-color 0.15s;
+}
+
+.header__logout:hover {
+  background: var(--color-surface-raised);
+}
+
+/* =========================================
+   Auth (로그인 · 회원가입)
+   ========================================= */
+.auth {
+  max-width: 24rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  animation: fade-in 0.15s ease-out;
+}
+
+.auth__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.auth__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-hero);
+  border: 1px solid var(--color-primary-soft);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+.auth__logo svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.auth__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.auth__desc {
+  font-size: 0.875rem;
+  color: var(--color-text-sub);
+}
+
+.auth__card {
+  padding: 1.5rem;
+}
+
+/* 로그인/회원가입 전환 세그먼트 */
+.auth__switch {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--radius-md);
+  /* 바탕은 카드보다 어둡게(눌린 홈), 선택된 쪽은 밝게(떠 있는 버튼). 반대로 하면 선택 안 된 쪽이 선택된 것처럼 보인다 */
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-soft);
+}
+
+.auth__switch-btn {
+  flex: 1;
+  min-height: 2.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-sub);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.auth__switch-btn--active {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.auth__form .btn--full {
+  margin-top: 0.5rem;
+}
+
+.auth__field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.auth__field .form-input,
+.auth__field .form-select {
+  width: 100%;
+}
+
+.auth__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.auth__hint {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-text-sub);
+  word-break: keep-all;
+}
+
+/* =========================================
+   Main Content
+   ========================================= */
+.main {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+/* =========================================
+   Tab Content
+   ========================================= */
+.tab-content {
+  display: none;
+}
+
+.tab-content--active {
+  display: block;
+  animation: fade-in 0.15s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* =========================================
+   Section Header
+   ========================================= */
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.section-header--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-header__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.section-header__desc {
+  font-size: 0.875rem;
+  color: var(--color-text-sub);
+}
+
+/* =========================================
+   Card
+   ========================================= */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.card__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-sub);
+  margin-bottom: 1rem;
+}
+
+/* =========================================
+   Form Elements
+   ========================================= */
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-sub);
+  margin-bottom: 0.5rem;
+}
+
+/* 입력창 글자는 16px 이상. 그보다 작으면 iOS Safari가 포커스 때 화면을 확대한다. */
+.form-textarea,
+.form-input,
+.form-select,
+.month-picker {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  color: var(--color-text);
+  background-color: var(--color-surface-raised);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-textarea:focus,
+.form-input:focus,
+.form-select:focus,
+.month-picker:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.form-textarea::placeholder,
+.form-input::placeholder {
+  color: var(--color-text-sub);
+  opacity: 0.7;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.form-input {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.form-select {
+  min-height: 2.75rem;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239CA3AF' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+}
+
+/* 드롭다운 펼침 목록은 OS가 그린다. 배경을 지정하지 않으면 일부 브라우저에서 흰 바탕에 흰 글자가 된다 */
+.form-select option {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+/* 미리보기 안처럼 다른 값들과 한 줄에 놓이는 드롭다운.
+   16px 미만이면 iOS Safari가 포커스 때 화면을 확대하고, 44px 미만이면 손가락으로 누르기 어렵다. */
+.form-select--inline {
+  font-size: 1rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+}
+
+/* =========================================
+   Buttons
+   ========================================= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn--primary {
+  background: var(--color-primary-strong);
+  color: var(--color-text-on-strong);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn--primary:hover {
+  background: var(--color-primary-hover);
+}
+
+.btn--outline {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.btn--outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn--full {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* 되돌릴 수 없는 동작(삭제)에만 쓴다 */
+.btn--danger {
+  background: var(--color-error-strong);
+  color: var(--color-text-on-strong);
+}
+
+.btn--danger:hover {
+  filter: brightness(1.1);
+}
+
+/* =========================================
+   Parse Result
+   ========================================= */
+.parse-result__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.parse-result__badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.parse-result__store {
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: right;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.parse-result__amount {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+
+.parse-result__meta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  margin-bottom: 1.25rem;
+}
+
+.parse-result__meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.parse-result__meta-label {
+  font-size: 0.75rem;
+  color: var(--color-text-sub);
+}
+
+.parse-result__meta-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.parse-result__hint {
+  font-size: 0.75rem;
+  color: var(--color-text-sub);
+  margin-bottom: 0.75rem;
+}
+
+.parse-result__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.parse-result__actions .btn {
+  flex: 1;
+  margin-top: 0;
+}
+
+/* =========================================
+   Stat Card
+   ========================================= */
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-card__label {
+  font-size: 0.875rem;
+  color: var(--color-text-sub);
+  font-weight: 500;
+}
+
+.stat-card__value {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+/* 대시보드의 "이번 달 총 지출". 화면에서 가장 중요한 숫자라 이 카드만 색을 입힌다 */
+.stat-card--hero {
+  position: relative;
+  overflow: hidden;
+  padding: 1.5rem;
+  background: var(--gradient-hero);
+  border-color: rgba(129, 140, 248, 0.25);
+  box-shadow: var(--shadow-glow);
+}
+
+/* 오른쪽 위의 옅은 빛 번짐 (장식) */
+.stat-card--hero::after {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 60%;
+  height: 160%;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.25), transparent 70%);
+  pointer-events: none;
+}
+
+.stat-card--hero .stat-card__label {
+  color: #C7D2FE;  /* 인디고 그라데이션 위에서 대비 4.5:1 이상 */
+}
+
+/* =========================================
+   Month Picker
+   ========================================= */
+.month-picker {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+/* =========================================
+   Chart
+   ========================================= */
+.chart-wrapper {
+  position: relative;
+  height: 240px;
+}
+
+/* =========================================
+   Filter Bar
+   ========================================= */
+.filter-bar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-bar .form-input,
+.filter-bar .form-select {
+  flex: 1;
+  min-width: 110px;
+}
+
+.form-input--search {
+  min-width: 140px;
+}
+
+/* =========================================
+   List Summary (조회 건수)
+   ========================================= */
+.list-summary {
+  font-size: 0.875rem;
+  color: var(--color-text-sub);
+  margin: 0 0 0.5rem;
+  padding: 0 0.25rem;
+}
+
+/* =========================================
+   Table
+   ========================================= */
+.table-wrapper {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-sub);
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  white-space: nowrap;
+}
+
+/* 날짜·카테고리·금액은 한 줄로 둔다. '☕ 카/페', '12,000/원'처럼 끊기면 표를 읽기 어렵다. */
+.table td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  white-space: nowrap;
+  transition: background-color 0.1s;
+}
+
+/* 날짜 열은 흐리게. 상점명과 금액이 먼저 읽혀야 한다 */
+.table td:first-child {
+  color: var(--color-text-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 칸 사이 여백은 좁혀 375px에서도 한 줄에 들어가게 하고, 양 끝 칸만 카드 가장자리와 띄운다 */
+.table th:first-child,
+.table td:first-child {
+  padding-left: 1rem;
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: 1rem;
+}
+
+/* 내역 행은 누르면 상세(시간·카드사·삭제)가 열린다 */
+.table__row--clickable {
+  cursor: pointer;
+}
+
+/* 상점명 버튼은 글자처럼 보이게 한다. button 기본 글꼴 크기(13px 안팎)를 쓰지 않도록 font를 상속한다. */
+.table__store-btn {
+  font: inherit;
+  font-weight: 500;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.table__store-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 상점명 칸만 줄바꿈을 허용한다. 남는 폭을 이 칸이 가져가고 단어 단위로 끊는다.
+   공백 없이 긴 이름이 그래도 넘치면 그때만 글자 단위로 끊는다.
+   min-width가 없으면 다른 칸이 넓을 때 한두 글자 폭까지 눌려 세로로 길어진다. */
+.table td:nth-child(2) {
+  min-width: 4rem;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: var(--color-surface-raised);
+}
+
+/* .table th(text-align: left)보다 우선해야 해서 th까지 붙인다. 없으면 헤더만 왼쪽에 붙어 금액 열과 어긋난다. */
+.table th.table__amount-col {
+  text-align: right;
+}
+
+.table td:last-child {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+/* .table td:last-child(금액 열: 우측 정렬·굵게)와 hover 배경보다 우선해야 해서
+   tr까지 붙여 우선순위를 올린다. 빈 행은 셀이 하나라 last-child 규칙에 걸린다. */
+.table tr.table__empty-row td {
+  text-align: center;
+  font-weight: 400;
+  color: var(--color-text-sub);
+  background: none;
+  padding: 1rem;
+  font-size: 0.875rem;
+  white-space: normal;
+}
+
+/* =========================================
+   Empty State
+   ========================================= */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0;
+  text-align: center;
+  /* 한국어가 '여/기에'처럼 단어 중간에서 줄바꿈되지 않게 한다 */
+  word-break: keep-all;
+}
+
+.empty-state__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.empty-state__desc {
+  font-size: 0.875rem;
+  color: var(--color-text-sub);
+}
+
+.empty-state__action {
+  margin-top: 0.5rem;
+}
+
+/* =========================================
+   Peer Summary
+   ========================================= */
+.peer-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 1.5rem 1rem;
+}
+
+.peer-summary__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.peer-summary__label {
+  font-size: 0.75rem;
+  color: var(--color-text-sub);
+}
+
+.peer-summary__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary);
+}
+
+.peer-summary__value--muted {
+  color: var(--color-text);
+}
+
+.peer-summary__divider {
+  width: 1px;
+  height: 2.5rem;
+  background: var(--color-border);
+}
+
+/* =========================================
+   Advice Card
+   ========================================= */
+.advice-card {
+  border-color: rgba(129, 140, 248, 0.2);
+  background:
+    linear-gradient(180deg, rgba(79, 70, 229, 0.08), transparent 60%),
+    var(--color-surface);
+}
+
+.advice-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.advice-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.advice-card__icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.advice-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.advice-card__text {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--color-text);
+  opacity: 0.88;
+  word-break: keep-all;
+}
+
+/* =========================================
+   Dialog (거래 상세)
+   ========================================= */
+.dialog {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  width: calc(100% - 2rem);
+  max-width: 24rem;
+  margin: auto;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+}
+
+.dialog::backdrop {
+  background: var(--color-overlay);
+  backdrop-filter: blur(4px);
+}
+
+.dialog__body {
+  padding: 1.5rem;
+}
+
+.dialog__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-sub);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.dialog__amount {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+
+.dialog__list {
+  border-top: 1px solid var(--color-border);
+}
+
+.dialog__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.875rem;
+}
+
+.dialog__row dt {
+  color: var(--color-text-sub);
+}
+
+.dialog__row dd {
+  font-weight: 600;
+  text-align: right;
+}
+
+.dialog__note {
+  font-size: 0.75rem;
+  color: var(--color-text-sub);
+  margin: 1rem 0 0.75rem;
+}
+
+.dialog__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.dialog__actions .btn {
+  flex: 1;
+}
+
+/* =========================================
+   Toast
+   ========================================= */
+.toast {
+  position: fixed;
+  bottom: calc(var(--tab-nav-height) + 1rem);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 2rem);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+  word-break: keep-all;
+  z-index: 200;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  animation: toast-in 0.2s ease-out;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.toast--success {
+  background: var(--color-success-strong);
+  border-color: transparent;
+  color: var(--color-text-on-strong);
+}
+
+.toast--error {
+  background: var(--color-error-strong);
+  border-color: transparent;
+  color: var(--color-text-on-strong);
+}
+
+/* =========================================
+   Loading Overlay
+   ========================================= */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =========================================
+   Bottom Tab Navigation
+   ========================================= */
+.tab-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  background: var(--color-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--color-border-soft);
+  height: var(--tab-nav-height);
+}
+
+.tab-nav__item {
+  position: relative;
+  flex: 1;
+  max-width: 12rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  color: var(--color-text-sub);
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.tab-nav__item:hover {
+  color: var(--color-text);
+}
+
+.tab-nav__item--active {
+  color: var(--color-primary);
+}
+
+/* 활성 탭 위쪽의 짧은 빛 막대. 색만으로 구분하지 않도록 모양으로도 표시한다 */
+.tab-nav__item--active::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  width: 1.5rem;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  transform: translateX(-50%);
+  background: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary);
+}
+
+.tab-nav__icon {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+.tab-nav__label {
+  letter-spacing: -0.01em;
+}
+
+/* =========================================
+   Motion
+   ========================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================
+   Responsive
+   ========================================= */
+@media (max-width: 480px) {
+  .section-header__title {
+    font-size: 1.25rem;
+  }
+
+  .parse-result__amount,
+  .stat-card__value {
+    font-size: 1.75rem;
+  }
+
+  .peer-summary__value {
+    font-size: 1.25rem;
+  }
+}
